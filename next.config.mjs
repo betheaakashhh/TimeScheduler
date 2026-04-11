@@ -1,7 +1,7 @@
-// next.config.js
-import { NextConfig } from 'next';
+// next.config.mjs
 
-const nextConfig: NextConfig = {
+/** @type {import('next').NextConfig} */
+const nextConfig = {
   experimental: {
     serverComponentsExternalPackages: ['pdf-parse', 'xlsx'],
   },
