@@ -17,14 +17,15 @@ const logSchema = z.object({
 
 export async function POST(req: NextRequest) {
   const session = await getServerSession(authOptions);
-  if (!session?.user?.id) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+ const userId = (session?.user as {id?: string} | undefined)?.id;
+  if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   const body = await req.json();
   const parsed = logSchema.safeParse(body);
   if (!parsed.success) return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
 
   const { slotId, date, status, notes } = parsed.data;
-  const userId = session.user.id;
+ 
 
   // Fetch slot to validate ownership + get strict config
   const slot = await prisma.scheduleSlot.findFirst({

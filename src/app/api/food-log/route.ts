@@ -1,6 +1,6 @@
 // src/app/api/food-log/route.ts
 import { NextRequest, NextResponse } from 'next/server';
-
+import { getServerSession } from 'next-auth';
 import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 import { prisma } from '@/lib/prisma';
 import { cache, CACHE_KEYS } from '@/lib/redis';
@@ -17,11 +17,12 @@ const foodSchema = z.object({
 // GET /api/food-log?date=YYYY-MM-DD
 export async function GET(req: NextRequest) {
   const session = await getServerSession(authOptions);
-  if (!session?.user?.id) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  const userId = (session?.user as {id?: string} | undefined)?.id;
+  if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   const { searchParams } = new URL(req.url);
   const date = searchParams.get('date') || dayjs().format('YYYY-MM-DD');
-  const userId = session.user.id;
+ 
 
   const logs = await prisma.foodLog.findMany({
     where: { userId, date },
@@ -34,14 +35,15 @@ export async function GET(req: NextRequest) {
 // POST /api/food-log - log a meal
 export async function POST(req: NextRequest) {
   const session = await getServerSession(authOptions);
-  if (!session?.user?.id) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  const userId = (session?.user as {id?: string} | undefined)?.id;
+  if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   const body = await req.json();
   const parsed = foodSchema.safeParse(body);
   if (!parsed.success) return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
 
   const { date, mealType, items, notes } = parsed.data;
-  const userId = session.user.id;
+  
 
   // Upsert — only one log per mealType per day
   const existing = await prisma.foodLog.findFirst({ where: { userId, date, mealType } });
@@ -67,13 +69,14 @@ export async function POST(req: NextRequest) {
 // DELETE /api/food-log?id=...
 export async function DELETE(req: NextRequest) {
   const session = await getServerSession(authOptions);
-  if (!session?.user?.id) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  const userId = (session?.user as {id?: string} | undefined)?.id;
+  if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   const { searchParams } = new URL(req.url);
   const id = searchParams.get('id');
   if (!id) return NextResponse.json({ error: 'id required' }, { status: 400 });
 
-  const userId = session.user.id;
+
   await prisma.foodLog.deleteMany({ where: { id, userId } });
   return NextResponse.json({ ok: true });
 }

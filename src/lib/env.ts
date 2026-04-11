@@ -7,7 +7,7 @@ export const env = {
   SUPABASE_URL:        process.env.NEXT_PUBLIC_SUPABASE_URL!,
   SUPABASE_ANON_KEY:   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
   SUPABASE_SERVICE_KEY:process.env.SUPABASE_SERVICE_ROLE_KEY!,
-  REDIS_URL:           process.env.REDIS_URL || 'redis://localhost:6379',
+  REDIS_URL:           process.env.REDIS_URL || process.env.UPSTASH_REDIS_URL || 'redis://localhost:6379',
   SMTP_HOST:           process.env.SMTP_HOST!,
   SMTP_PORT:           parseInt(process.env.SMTP_PORT || '587'),
   SMTP_USER:           process.env.SMTP_USER!,

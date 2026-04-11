@@ -36,6 +36,7 @@ export interface ScheduleSlot {
   emailAlert: boolean;
   foodRequired: boolean;
   isAcademic: boolean;
+  checklistOn?: boolean;
   isActive: boolean;
   sortOrder: number;
   repeatDays: number[];

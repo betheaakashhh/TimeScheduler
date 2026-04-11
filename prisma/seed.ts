@@ -77,7 +77,7 @@ async function main() {
     where: { userId: user.id },
     update: {},
     create: {
-      userId,
+      userId : user.id,
       slotStart: '09:00',
       slotEnd:   '16:00',
       parsedData: [] as any,

@@ -7,7 +7,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useScheduleStore } from '@/store/scheduleStore';
 import { formatTime } from '@/lib/scheduleUtils';
 import { AcademicPeriod } from '@/types';
-import { MapPin, Clock, BookOpen, Flask } from 'lucide-react';
+import { MapPin, Clock, BookOpen} from 'lucide-react';
 import dayjs from 'dayjs';
 
 function toMins(t: string) {

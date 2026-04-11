@@ -23,7 +23,7 @@ function HeatCell({ day }: { day: WeekDay }) {
 
   return (
     <div style={{ textAlign: 'center', flex: 1 }}>
-      <div style={{ fontSize: 10, color: 'var(--text3)', marginBottom: 4, fontWeight: isToday ? 700 : 400, color: isToday ? 'var(--accent)' : 'var(--text3)' }}>{day.label}</div>
+      <div style={{ fontSize: 10, marginBottom: 4, fontWeight: isToday ? 700 : 400, color: isToday ? 'var(--accent)' : 'var(--text3)' }}>{day.label}</div>
       <div
         style={{
           height: 60, borderRadius: 8,

@@ -179,7 +179,7 @@ function MiniSlot({ slot, onDone, onSkip }: { slot:ScheduleSlot; onDone:()=>void
           {!isDone && slot.isStrict && !isBlocked && (
             <button className="btn btn-sm" style={{ color:'#E24B4A',borderColor:'rgba(226,75,74,0.3)' }} onClick={onSkip}>Skip</button>
           )}
-          {isDone && <span style={{ fontSize:12,color:'var(--accent3)',fontWeight:500,display:'flex',alignItems:'center',gap:5 }}><CheckCircle2 size=12/> Completed</span>}
+          {isDone && <span style={{ fontSize:12,color:'var(--accent3)',fontWeight:500,display:'flex',alignItems:'center',gap:5 }}><CheckCircle2 size={12}/> Completed</span>}
           {isBlocked && <span style={{ fontSize:12,color:'#A32D2D',display:'flex',alignItems:'center',gap:5 }}><Lock size={12}/> Unlock prior task first</span>}
         </div>
       )}

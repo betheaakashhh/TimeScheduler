@@ -70,8 +70,8 @@ async function savePeriods(userId: string, periods: any[], slotStart: string, sl
 
 export async function GET(req: NextRequest) {
   const session = await getServerSession(authOptions);
-  if (!session?.user?.id) return NextResponse.json({error:'Unauthorized'},{status:401});
-  const userId = (session.user as any).id;
+  const userId = (session?.user as {id?: string} | undefined)?.id;
+  if (!userId) return NextResponse.json({error:'Unauthorized'},{status:401});
   const cached = await cache.get(CACHE_KEYS.academic(userId)).catch(()=>null);
   if (cached) return NextResponse.json(cached);
   const tt = await prisma.academicTimetable.findUnique({ where:{userId}, include:{periods:true} });
@@ -91,8 +91,9 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   const session = await getServerSession(authOptions);
-  if (!session?.user?.id) return NextResponse.json({error:'Unauthorized'},{status:401});
-  const userId = (session.user as any).id;
+ 
+  const userId = (session?.user as { id?: string } | undefined)?.id;
+  if (!userId) return NextResponse.json({error:'Unauthorized'},{status:401});
   const ct = req.headers.get('content-type')||'';
   let parsedPeriods: any[] = [], slotStart='09:00', slotEnd='16:00';
 
@@ -132,10 +133,11 @@ export async function POST(req: NextRequest) {
 
 export async function PATCH(req: NextRequest) {
   const session = await getServerSession(authOptions);
-  if (!session?.user?.id) return NextResponse.json({error:'Unauthorized'},{status:401});
+  const userId = (session?.user as { id?: string } | undefined)?.id;
+  if(!userId) return NextResponse.json({error:'Unauthorized'},{status:401});
   const {periodId,...rest} = await req.json();
   if (!periodId) return NextResponse.json({error:'periodId required'},{status:400});
-  const userId = (session.user as any).id;
+  
   const tt = await prisma.academicTimetable.findUnique({where:{userId}});
   if (!tt) return NextResponse.json({error:'No timetable'},{status:404});
   const updated = await prisma.academicPeriod.update({where:{id:periodId},data:rest});

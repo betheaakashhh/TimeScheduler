@@ -12,9 +12,10 @@ import {
   PersonStanding, TrendingUp, Moon, Star, Sunrise,
   MapPin, ChevronRight, Radio,
 } from 'lucide-react';
+import type { LucideProps } from 'lucide-react';
 
 // ── Lucide icon map (same as dashboard) ──────────────────────────────────────
-const TAG_ICON: Record<string, React.FC<{ size?: number; color?: string; style?: any }>> = {
+const TAG_ICON: Record<string, React.ComponentType<LucideProps>> = {
   BREAKFAST:       Coffee,
   MORNING_ROUTINE: Sunrise,
   GYM:             Dumbbell,

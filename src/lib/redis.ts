@@ -3,23 +3,55 @@ import Redis from 'ioredis';
 import Bull from 'bull';
 import { EmailJob } from '@/types';
 import { env } from './env';
+import { lazy } from 'react';
+
+const isTlsRedis = env.REDIS_URL.startsWith('rediss://');
+
+const redisUrl = new URL(env.REDIS_URL);
+
+const redisConnectionOptions = {
+    maxRetriesPerRequest: 3,
+    retryStrategy: (times: number) => Math.min(times * 50, 2000),
+    ...(isTlsRedis ? { tls: {} } : {}),
+    
+  };
+
 
 // Redis singleton
 const globalForRedis = globalThis as unknown as { redis: Redis };
 
 export const redis =
   globalForRedis.redis ||
-  new Redis(env.REDIS_URL, {
-    maxRetriesPerRequest: 3,
-    retryStrategy: (times) => Math.min(times * 50, 2000),
-  });
+  new Redis(env.REDIS_URL, redisConnectionOptions);
+
+redis.on('connect', () => {
+  console.log('✅ Redis connected');
+});
+
+redis.on('error', (err) => {
+  console.error('❌ Redis error:', err);
+});
 
 if (process.env.NODE_ENV !== 'production') globalForRedis.redis = redis;
 
+const bullRedisConfig = {
+  redis: {
+    host:  redisUrl.hostname,
+    port: Number(redisUrl.port) ||(isTlsRedis ? 6380 : 6379),
+    db: redisUrl.pathname ? Number(redisUrl.pathname.replace(/^\//, '') || '0') : 0,
+    username : redisUrl.username || undefined,
+    password : redisUrl.password || undefined,
+    ...(isTlsRedis ? { tls: {} } : {}),
+    maxRetriesPerRequest: null,
+    enableReadyCheck: false,
+    lazyConnect: true,
+  },
+};
+
 // Bull queues
-export const emailQueue = new Bull<EmailJob>('email-queue', env.REDIS_URL);
-export const scheduleQueue = new Bull('schedule-queue', env.REDIS_URL);
-export const streakQueue = new Bull('streak-queue', env.REDIS_URL);
+export const emailQueue = new Bull<EmailJob>('email-queue', bullRedisConfig);
+export const scheduleQueue = new Bull('schedule-queue', bullRedisConfig);
+export const streakQueue = new Bull('streak-queue', bullRedisConfig);
 
 // Cache helpers
 export const cache = {
