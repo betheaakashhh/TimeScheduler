@@ -1,11 +1,9 @@
 // src/app/api/schedule/route.ts
-// Fix: extract userId from JWT token via getToken, not getServerSession,
-// because getServerSession can lose the sub on some NextAuth configurations.
+// getToken with secret only — no cookieName override needed in App Router
 import { NextRequest, NextResponse } from 'next/server';
 import { getToken } from 'next-auth/jwt';
 import { prisma } from '@/lib/prisma';
 import { cache, CACHE_KEYS } from '@/lib/redis';
-import { enrichSlots } from '@/lib/scheduleUtils';
 import { z } from 'zod';
 import dayjs from 'dayjs';
 
@@ -29,8 +27,12 @@ const slotSchema = z.object({
 });
 
 async function getUserId(req: NextRequest): Promise<string | null> {
-  const token = await getToken({ req, secret: process.env.NEXTAUTH_SECRET });
-  return (token?.id as string) || (token?.sub as string) || null;
+  try {
+    const token = await getToken({ req, secret: process.env.NEXTAUTH_SECRET });
+    return (token?.id as string) || (token?.sub as string) || null;
+  } catch {
+    return null;
+  }
 }
 
 // GET /api/schedule?date=YYYY-MM-DD
@@ -41,7 +43,11 @@ export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const date = searchParams.get('date') || dayjs().format('YYYY-MM-DD');
 
-  const cached = await cache.get(CACHE_KEYS.userSchedule(userId, date)).catch(()=>null);
+  // Try cache (with timeout so slow Redis doesn't block)
+  const cached = await Promise.race([
+    cache.get(CACHE_KEYS.userSchedule(userId, date)),
+    new Promise<null>(r => setTimeout(() => r(null), 500)),
+  ]);
   if (cached) return NextResponse.json(cached);
 
   const dayOfWeek = dayjs(date).day();
@@ -53,52 +59,71 @@ export async function GET(req: NextRequest) {
     orderBy: { startTime: 'asc' },
   });
 
-  const enriched = slots.map((slot) => {
+  const enriched = slots.map(slot => {
     const log = slot.taskLogs[0];
     return { ...slot, taskLog: log || null, status: log?.status || 'PENDING' };
   });
 
-  await cache.set(CACHE_KEYS.userSchedule(userId, date), enriched, 120).catch(()=>{});
+  // Cache without blocking response
+  cache.set(CACHE_KEYS.userSchedule(userId, date), enriched, 120).catch(() => {});
   return NextResponse.json(enriched);
 }
 
-// POST /api/schedule — create slot
+// POST /api/schedule
 export async function POST(req: NextRequest) {
   const userId = await getUserId(req);
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-  // Verify user exists before inserting (prevents FK violation)
-  const user = await prisma.user.findUnique({ where: { id: userId }, select: { id: true } });
-  if (!user) return NextResponse.json({ error: 'User not found — please log in again' }, { status: 404 });
+  // Parse body — catch malformed JSON
+  let body: unknown;
+  try {
+    body = await req.json();
+  } catch {
+    return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
+  }
 
-  const body = await req.json();
   const parsed = slotSchema.safeParse(body);
   if (!parsed.success) return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
 
   const data = parsed.data;
+
+  // Verify user exists (prevents FK violation)
+  const user = await prisma.user.findUnique({ where: { id: userId }, select: { id: true } });
+  if (!user) return NextResponse.json({ error: 'User not found — please sign in again' }, { status: 404 });
+
   const count = await prisma.scheduleSlot.count({ where: { userId } });
 
-  const slot = await prisma.scheduleSlot.create({
-    data: {
-      ...data,
-      userId,
-      sortOrder: count,
-      checklist: data.checklist as any,
-      tag: data.tag as any,
-      strictMode: data.strictMode as any,
-    },
-  });
+  try {
+    const slot = await prisma.scheduleSlot.create({
+      data: {
+        ...data,
+        userId,
+        sortOrder: count,
+        checklist: data.checklist as any,
+        tag:        data.tag        as any,
+        strictMode: data.strictMode as any,
+      },
+    });
 
-  await cache.invalidateUser(userId).catch(()=>{});
-  return NextResponse.json(slot, { status: 201 });
+    cache.invalidateUser(userId).catch(() => {});
+    return NextResponse.json(slot, { status: 201 });
+  } catch (err: any) {
+    console.error('POST /api/schedule error:', err);
+    if (err.code === 'P2003') {
+      return NextResponse.json({ error: 'User not found — sign out and sign back in' }, { status: 404 });
+    }
+    return NextResponse.json({ error: err.message || 'Failed to create slot' }, { status: 500 });
+  }
 }
 
-// PATCH /api/schedule — update slot
+// PATCH /api/schedule
 export async function PATCH(req: NextRequest) {
   const userId = await getUserId(req);
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-  const body = await req.json();
+  let body: any;
+  try { body = await req.json(); } catch { return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 }); }
+
   const { id, ...rest } = body;
   if (!id) return NextResponse.json({ error: 'id required' }, { status: 400 });
 
@@ -110,7 +135,7 @@ export async function PATCH(req: NextRequest) {
     data: { ...rest, checklist: rest.checklist as any },
   });
 
-  await cache.invalidateUser(userId).catch(()=>{});
+  cache.invalidateUser(userId).catch(() => {});
   return NextResponse.json(updated);
 }
 
@@ -119,11 +144,10 @@ export async function DELETE(req: NextRequest) {
   const userId = await getUserId(req);
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-  const { searchParams } = new URL(req.url);
-  const id = searchParams.get('id');
+  const id = new URL(req.url).searchParams.get('id');
   if (!id) return NextResponse.json({ error: 'id required' }, { status: 400 });
 
   await prisma.scheduleSlot.updateMany({ where: { id, userId }, data: { isActive: false } });
-  await cache.invalidateUser(userId).catch(()=>{});
+  cache.invalidateUser(userId).catch(() => {});
   return NextResponse.json({ ok: true });
 }

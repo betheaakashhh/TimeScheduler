@@ -1,20 +1,21 @@
 // src/app/api/analytics/route.ts
 import { NextRequest, NextResponse } from 'next/server';
-
+import { getServerSession } from 'next-auth';
 import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 import { prisma } from '@/lib/prisma';
 import { cache, CACHE_KEYS } from '@/lib/redis';
 import dayjs from 'dayjs';
-import { AuthOptions } from 'next-auth';
+
 
 // GET /api/analytics?range=7|30
 export async function GET(req: NextRequest) {
   const session = await getServerSession(authOptions);
-  if (!session?.user?.id) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  const userId =  (session?.user as {id?: string} | undefined)?.id;
+  if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   const { searchParams } = new URL(req.url);
   const range = parseInt(searchParams.get('range') || '7');
-  const userId = (session.user as any).id;
+ 
 
   const cacheKey = `user:${userId}:analytics:${range}`;
   const cached = await cache.get(cacheKey);
@@ -98,6 +99,5 @@ export async function GET(req: NextRequest) {
   return NextResponse.json(result);
 }
 
-function getServerSession(authOptions: AuthOptions) {
-  throw new Error('Function not implemented.');
-}
+
+
