@@ -1,0 +1,205 @@
+// prisma/schema.prisma
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model User {
+  id              String    @id @default(cuid())
+  email           String    @unique
+  name            String?
+  passwordHash    String?
+  avatarUrl       String?
+  emailVerified   DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  // Settings
+  emailEnabled    Boolean   @default(true)
+  streakWarning   Boolean   @default(true)
+  soundEnabled    Boolean   @default(false)
+  darkMode        Boolean   @default(false)
+  wakeUpTime      String    @default("06:00")
+  timezone        String    @default("Asia/Kolkata")
+
+  // Relations
+  scheduleSlots   ScheduleSlot[]
+  taskLogs        TaskLog[]
+  streaks         Streak[]
+  academicTT      AcademicTimetable?
+  foodLogs        FoodLog[]
+  accounts        Account[]
+  sessions        Session[]
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model ScheduleSlot {
+  id           String      @id @default(cuid())
+  userId       String
+  title        String
+  description  String?
+  startTime    String      // "07:30" (HH:mm)
+  endTime      String      // "08:30" (HH:mm)
+  tag          SlotTag
+  customTag    String?
+  emoji        String      @default("📌")
+  color        String?
+  isStrict     Boolean     @default(false)
+  strictMode   StrictMode  @default(WARN)
+  isAutoMark   Boolean     @default(false) // auto-complete when time passes
+  emailAlert   Boolean     @default(false)
+  foodRequired Boolean     @default(false)
+  isAcademic   Boolean     @default(false)
+  isActive     Boolean     @default(true)
+  sortOrder    Int         @default(0)
+  repeatDays   Int[]       @default([1,2,3,4,5,6,7]) // 1=Mon ... 7=Sun
+  checklist    Json        @default("[]")  // [{label, required}]
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+
+  user         User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  taskLogs     TaskLog[]
+
+  @@index([userId, startTime])
+}
+
+model TaskLog {
+  id          String         @id @default(cuid())
+  userId      String
+  slotId      String
+  date        String         // "2026-04-09"
+  status      TaskStatus     @default(PENDING)
+  completedAt DateTime?
+  skippedAt   DateTime?
+  notes       String?
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+
+  user        User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  slot        ScheduleSlot   @relation(fields: [slotId], references: [id], onDelete: Cascade)
+
+  @@unique([slotId, date])
+  @@index([userId, date])
+}
+
+model FoodLog {
+  id        String   @id @default(cuid())
+  userId    String
+  date      String   // "2026-04-09"
+  mealType  MealType
+  items     Json     // string[]
+  notes     String?
+  loggedAt  DateTime @default(now())
+  
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, date])
+}
+
+model Streak {
+  id         String   @id @default(cuid())
+  userId     String   @unique
+  current    Int      @default(0)
+  best       Int      @default(0)
+  lastDate   String?  // "2026-04-09"
+  updatedAt  DateTime @updatedAt
+
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model AcademicTimetable {
+  id           String           @id @default(cuid())
+  userId       String           @unique
+  rawFilePath  String?
+  parsedData   Json             // structured timetable data
+  slotStart    String           @default("09:00")
+  slotEnd      String           @default("16:00")
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime         @updatedAt
+  periods      AcademicPeriod[]
+
+  user         User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model AcademicPeriod {
+  id           String            @id @default(cuid())
+  timetableId  String
+  subject      String
+  startTime    String
+  endTime      String
+  room         String?
+  faculty      String?
+  dayOfWeek    Int[]             @default([1,2,3,4,5])
+  isLab        Boolean           @default(false)
+  color        String?
+
+  timetable    AcademicTimetable @relation(fields: [timetableId], references: [id], onDelete: Cascade)
+}
+
+enum SlotTag {
+  BREAKFAST
+  MORNING_ROUTINE
+  GYM
+  WORKOUT
+  COLLEGE
+  SCHOOL
+  SELF_STUDY
+  WALK
+  DINNER
+  LUNCH
+  WORK
+  SLEEP
+  MEDITATION
+  READING
+  CUSTOM
+}
+
+enum StrictMode {
+  HARD      // block next task
+  WARN      // allow skip but break streak
+  GRACE     // 30 min grace period
+}
+
+enum TaskStatus {
+  PENDING
+  COMPLETED
+  SKIPPED
+  BLOCKED
+}
+
+enum MealType {
+  BREAKFAST
+  LUNCH
+  DINNER
+  SNACK
+}
