@@ -24,9 +24,11 @@ export const io = new SocketIOServer(httpServer, {
 // Room = userId — each user gets their own room for targeted events
 io.on('connection', (socket) => {
   console.log('Socket connected:', socket.id);
+  let roomUserId: string | null = null;
 
   socket.on('client:join-room', ({ userId }: { userId: string }) => {
     socket.join(`user:${userId}`);
+    roomUserId = userId;
     console.log(`Socket ${socket.id} joined room user:${userId}`);
   });
 
@@ -37,7 +39,15 @@ io.on('connection', (socket) => {
         update: { status: 'COMPLETED', completedAt: new Date() },
         create: { slotId, date, status: 'COMPLETED', completedAt: new Date(), userId: '' },
       });
-      const slot = await prisma.scheduleSlot.findUnique({ where: { id: slotId } });
+      const slot = await prisma.scheduleSlot.findUnique({ where: { id: slotId } , select: { userId: true } });
+      if (!slot) { console.error('mark-complete: slot not found', slotId); return; }
+      const userId = slot.userId;
+
+       await prisma.taskLog.upsert({
+        where: { slotId_date: { slotId, date } },
+        update: { status: 'COMPLETED', completedAt: new Date() },
+        create: { slotId, date, userId, status: 'COMPLETED', completedAt: new Date() },
+      });
       if (slot) {
         io.to(`user:${slot.userId}`).emit('slot:status-update', {
           slotId, status: 'COMPLETED', date,
@@ -53,6 +63,7 @@ io.on('connection', (socket) => {
     try {
       const slot = await prisma.scheduleSlot.findUnique({ where: { id: slotId } });
       if (!slot) return;
+      const userId = slot.userId;
 
       await prisma.taskLog.upsert({
         where: { slotId_date: { slotId, date } },
@@ -65,10 +76,14 @@ io.on('connection', (socket) => {
       });
 
       // If strict HARD — block downstream slots
-      if (slot.isStrict && slot.strictMode === 'HARD') {
-        await handleHardLock(slot.userId, slotId, date);
+       if (slot.isStrict && slot.strictMode === 'HARD') {
+        const laterSlots = await prisma.scheduleSlot.findMany({ where: { userId, startTime: { gt: slot.startTime }, isActive: true } });
+        for (const ls of laterSlots) {
+          await prisma.taskLog.upsert({ where: { slotId_date: { slotId: ls.id, date } }, update: { status: 'BLOCKED' }, create: { slotId: ls.id, date, userId, status: 'BLOCKED' } });
+          io.to(`user:${userId}`).emit('slot:status-update', { slotId: ls.id, status: 'BLOCKED', date });
+        }
       } else if (slot.isStrict && slot.strictMode === 'WARN') {
-        await breakStreak(slot.userId);
+        await prisma.streak.upsert({ where: { userId }, update: { current: 0 }, create: { userId, current: 0, best: 0 } });
       }
     } catch (err) {
       console.error('mark-skip error:', err);

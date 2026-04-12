@@ -1,46 +1,25 @@
-// src/app/api/settings/route.ts
+// src/app/api/settings/reset/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 import { prisma } from '@/lib/prisma';
-import { z } from 'zod';
+import { cache } from '@/lib/redis';
 
-const settingsSchema = z.object({
-  emailEnabled:  z.boolean().optional(),
-  streakWarning: z.boolean().optional(),
-  soundEnabled:  z.boolean().optional(),
-  darkMode:      z.boolean().optional(),
-  wakeUpTime:    z.string().regex(/^\d{2}:\d{2}$/).optional(),
-  timezone:      z.string().optional(),
-});
-
-export async function GET(req: NextRequest) {
+export async function DELETE(req: NextRequest) {
   const session = await getServerSession(authOptions);
- const userId = (session?.user as {id?: string} | undefined)?.id;
+  const userId = (session?.user as any)?.id;
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-
-  const user = await prisma.user.findUnique({
-    where: { id: userId },
-    select: { emailEnabled: true, streakWarning: true, soundEnabled: true, darkMode: true, wakeUpTime: true, timezone: true },
-  });
-
-  return NextResponse.json(user);
-}
-
-export async function PATCH(req: NextRequest) {
-  const session = await getServerSession(authOptions);
-  const userId = (session?.user as {id?: string} | undefined)?.id;
-  if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-
-  const body = await req.json();
-  const parsed = settingsSchema.safeParse(body);
-  if (!parsed.success) return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
-
-  const updated = await prisma.user.update({
-    where: { id: userId },
-    data: parsed.data,
-    select: { emailEnabled: true, streakWarning: true, soundEnabled: true, darkMode: true, wakeUpTime: true },
-  });
-
-  return NextResponse.json(updated);
+  // Delete all user data except the account itself
+  await prisma.taskLog.deleteMany({ where: { userId } });
+  await prisma.scheduleSlot.deleteMany({ where: { userId } });
+  await prisma.foodLog.deleteMany({ where: { userId } });
+  await prisma.readingSession.deleteMany({ where: { userId } });
+  await prisma.absenceRecord.deleteMany({ where: { userId } });
+  await prisma.streak.upsert({ where: { userId }, update: { current: 0, best: 0, lastDate: null }, create: { userId, current: 0, best: 0 } });
+  if ((prisma as any).academicTimetable) {
+    const tt = await prisma.academicTimetable.findUnique({ where: { userId } });
+    if (tt) { await prisma.academicPeriod.deleteMany({ where: { timetableId: tt.id } }); await prisma.academicTimetable.delete({ where: { userId } }); }
+  }
+  await cache.invalidateUser(userId).catch(() => {});
+  return NextResponse.json({ ok: true });
 }

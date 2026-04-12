@@ -29,8 +29,8 @@ interface ScheduleStore {
 export const useScheduleStore = create<ScheduleStore>()(
   persist(
     (set) => ({
-      slots: [],
-      streak: null,
+      slots: [],         // NOT persisted — always loaded fresh from API
+      streak: null,      // NOT persisted
       currentPeriod: null,
       nextPeriod: null,
       theme: 'light',
@@ -40,17 +40,13 @@ export const useScheduleStore = create<ScheduleStore>()(
       setStreak: (streak) => set({ streak }),
       setLoading: (v) => set({ isLoading: v }),
       setTheme: (theme) => {
-        if (typeof document !== 'undefined') {
-          document.documentElement.setAttribute('data-theme', theme === 'dark' ? 'dark' : '');
-        }
+        if (typeof document !== 'undefined') document.documentElement.setAttribute('data-theme', theme === 'dark' ? 'dark' : '');
         set({ theme });
       },
       toggleSidebar: () => set((s) => ({ sidebarExpanded: !s.sidebarExpanded })),
       setSidebarExpanded: (v) => set({ sidebarExpanded: v }),
       updateSlotStatus: (slotId, status) =>
-        set((state) => ({
-          slots: state.slots.map((s) => s.id === slotId ? { ...s, status, taskLog: { ...s.taskLog, status } as any } : s),
-        })),
+        set((state) => ({ slots: state.slots.map((s) => s.id === slotId ? { ...s, status, taskLog: { ...s.taskLog, status } as any } : s) })),
       markAutoComplete: (slotId) =>
         set((state) => ({ slots: state.slots.map((s) => s.id === slotId ? { ...s, status: 'COMPLETED' } : s) })),
       updateStreak: (streak) => set({ streak }),
@@ -62,6 +58,7 @@ export const useScheduleStore = create<ScheduleStore>()(
     }),
     {
       name: 'rhythmiq-ui',
+      // Only persist UI preferences — NOT data that comes from the API
       partialize: (state) => ({ theme: state.theme, sidebarExpanded: state.sidebarExpanded }),
     }
   )
@@ -74,7 +71,6 @@ export const selectTodayStats = (state: ScheduleStore) => {
   const rate = total > 0 ? done / total : 0;
   return { done, total, rate, pct: Math.round(rate * 100) };
 };
-
 export const selectCurrentSlot = (state: ScheduleStore) => state.slots.find((s) => s.isCurrentlyActive) || null;
 export const selectUpcomingSlots = (state: ScheduleStore) =>
   state.slots.filter((s) => s.status === 'PENDING' && !s.isCurrentlyActive).slice(0, 4);

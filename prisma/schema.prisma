@@ -29,6 +29,8 @@ model User {
 
   // Relations
   scheduleSlots   ScheduleSlot[]
+  readingSessions ReadingSession[]
+  absenceRecords  AbsenceRecord[]
   taskLogs        TaskLog[]
   streaks         Streak[]
   academicTT      AcademicTimetable?
@@ -202,4 +204,33 @@ enum MealType {
   LUNCH
   DINNER
   SNACK
+}
+
+model ReadingSession {
+  id          String   @id @default(cuid())
+  userId      String
+  title       String?
+  sessionType String   @default("passive") // "passive" | "active"
+  durationSec Int      @default(0)
+  overview    String?
+  fileUrl     String?
+  date        String
+  createdAt   DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, date])
+}
+
+model AbsenceRecord {
+  id        String   @id @default(cuid())
+  userId    String
+  date      String
+  reason    String?
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, date])
+  @@index([userId])
 }

@@ -9,13 +9,14 @@ import { useLiveClock } from '@/hooks/useSocket';
 import {
   LayoutDashboard, Calendar, BookOpen, BarChart2, Settings,
   Plus, Sun, Moon, LogOut, ChevronRight, ChevronLeft,
-  Activity, Wifi, TableProperties,
+  Activity, Wifi, TableProperties, BookMarked,
 } from 'lucide-react';
 
 const NAV_ITEMS = [
   { href: '/dashboard',  label: 'Dashboard',  icon: LayoutDashboard },
   { href: '/schedule',   label: 'Schedule',   icon: Calendar        },
   { href: '/timetable',  label: 'Timetable',  icon: TableProperties },
+  { href: '/reading',    label: 'Reading',    icon: BookMarked      },
   { href: '/academic',   label: 'Academic',   icon: BookOpen        },
   { href: '/analytics',  label: 'Analytics',  icon: BarChart2       },
   { href: '/settings',   label: 'Settings',   icon: Settings        },
