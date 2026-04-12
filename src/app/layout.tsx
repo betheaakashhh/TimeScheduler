@@ -25,7 +25,9 @@ export const metadata: Metadata = {
   description: 'Real-time timetable and task tracker with streak system, academic integration, and smart reminders.',
   manifest: '/manifest.json',
   icons: { icon: '/icon.png', apple: '/apple-icon.png' },
+
 };
+
 
 export const viewport: Viewport = {
   themeColor: '#FF6B35',
@@ -37,6 +39,7 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" suppressHydrationWarning>
+      
       <body className={`${syne.variable} ${dmSans.variable}`}>
         <Providers>
           {children}
