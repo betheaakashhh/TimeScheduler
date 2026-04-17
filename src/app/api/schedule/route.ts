@@ -65,8 +65,8 @@ export async function POST(req: NextRequest) {
   const user = await prisma.user.findUnique({ where: { id: userId }, select: { id: true } });
   if (!user) return NextResponse.json({ error: 'User not found — please sign in again' }, { status: 404 });
   const count = await prisma.scheduleSlot.count({ where: { userId } });
-  // Strip checklistOn — not a DB field
-  const { checklistOn, ...dbData } = parsed.data;
+  // Strip UI-only fields — checklistOn, isFutureDay are not DB fields
+  const { checklistOn, isFutureDay, ...dbData } = parsed.data;
   try {
     const slot = await prisma.scheduleSlot.create({
       data: { ...dbData, userId, sortOrder: count, checklist: dbData.checklist as any, tag: dbData.tag as any, strictMode: dbData.strictMode as any },
@@ -84,13 +84,29 @@ export async function PATCH(req: NextRequest) {
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   let body: any;
   try { body = await req.json(); } catch { return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 }); }
-  const { id, checklistOn: _cl, ...rest } = body; // strip checklistOn
+  const { id } = body;
   if (!id) return NextResponse.json({ error: 'id required' }, { status: 400 });
   const existing = await prisma.scheduleSlot.findFirst({ where: { id, userId } });
   if (!existing) return NextResponse.json({ error: 'Not found' }, { status: 404 });
-  const updated = await prisma.scheduleSlot.update({ where: { id }, data: { ...rest, checklist: rest.checklist as any } });
-  cache.invalidateUser(userId).catch(() => {});
-  return NextResponse.json(updated);
+  // Whitelist only valid DB fields — strip ALL UI-only fields (checklistOn, isFutureDay, etc.)
+  const allowed = ['title','description','startTime','endTime','tag','customTag','emoji','color',
+    'isStrict','strictMode','isAutoMark','emailAlert','foodRequired','isAcademic','isActive',
+    'sortOrder','repeatDays','checklist'];
+  const data: any = {};
+  for (const k of allowed) {
+    if (k in body && body[k] !== undefined) data[k] = body[k];
+  }
+  if (data.tag) data.tag = data.tag as any;
+  if (data.strictMode) data.strictMode = data.strictMode as any;
+  if (data.checklist) data.checklist = data.checklist as any;
+  try {
+    const updated = await prisma.scheduleSlot.update({ where: { id }, data });
+    cache.invalidateUser(userId).catch(() => {});
+    return NextResponse.json(updated);
+  } catch (err: any) {
+    console.error('PATCH /api/schedule error:', err.message);
+    return NextResponse.json({ error: err.message || 'Update failed' }, { status: 500 });
+  }
 }
 
 export async function DELETE(req: NextRequest) {

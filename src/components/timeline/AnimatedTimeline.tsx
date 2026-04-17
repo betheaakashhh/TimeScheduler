@@ -13,10 +13,11 @@ import { CheckCircle2, Lock, ChevronDown, ChevronUp, Zap } from 'lucide-react';
 interface Props {
   slots: ScheduleSlot[];
   date: string;
-  onMarkDone: (slotId: string) => void;
+  onMarkDone: (slotId: string) => void | Promise<void>;
   onSkip:     (slotId: string) => void;
   onCheckItem:(slotId: string, itemId: string, checked: boolean) => void;
   onToggleChecklist: (slotId: string, on: boolean) => void;
+  isFutureDay?: boolean;
 }
 
 /* ─ connector dot ─ */
@@ -61,7 +62,7 @@ function Dot({ status, isActive }: { status: string; isActive: boolean }) {
 /* ─ single slot card ─ */
 function SlotCard({
   slot, index, expanded, onToggle,
-  onMarkDone, onSkip, onCheckItem, onToggleChecklist,
+  onMarkDone, onSkip, onCheckItem, onToggleChecklist, timeGated,
 }: {
   slot: ScheduleSlot;
   index: number;
@@ -71,6 +72,7 @@ function SlotCard({
   onSkip: () => void;
   onCheckItem: (itemId: string, checked: boolean) => void;
   onToggleChecklist: (on: boolean) => void;
+  timeGated?: boolean;
 }) {
   const isActive = !!slot.isCurrentlyActive;
   const isDone   = slot.status === 'COMPLETED';
@@ -231,16 +233,23 @@ function SlotCard({
             {/* Actions */}
             <div style={{ marginTop: 10, display: 'flex', gap: 8 }}>
               {!isDone && !slot.isAutoMark && !isBlocked && (
-                <motion.button
-                  className="btn btn-primary btn-sm"
-                  style={{ flex: 1, justifyContent: 'center' }}
-                  onClick={(e) => { e.stopPropagation(); onMarkDone(); }}
-                  whileTap={{ scale: 0.97 }}
-                >
-                  <CheckCircle2 size={13} /> Mark done
-                </motion.button>
+                timeGated ? (
+                  <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 6, padding: '7px 12px', borderRadius: 8, background: 'var(--surface2)', border: '0.5px solid var(--border)', fontSize: 12, color: 'var(--text3)' }}>
+                    <span style={{ fontSize: 13 }}>⏳</span>
+                    Available after {formatTime(slot.endTime)}
+                  </div>
+                ) : (
+                  <motion.button
+                    className="btn btn-primary btn-sm"
+                    style={{ flex: 1, justifyContent: 'center' }}
+                    onClick={(e) => { e.stopPropagation(); onMarkDone(); }}
+                    whileTap={{ scale: 0.97 }}
+                  >
+                    <CheckCircle2 size={13} /> Mark done
+                  </motion.button>
+                )
               )}
-              {!isDone && slot.isStrict && !isBlocked && (
+              {!isDone && slot.isStrict && !isBlocked && !timeGated && (
                 <motion.button
                   className="btn btn-sm"
                   style={{ color: '#E24B4A', borderColor: 'rgba(226,75,74,0.3)' }}
@@ -276,9 +285,19 @@ function SlotCard({
 
 /* ─ main export ─ */
 export default function AnimatedTimeline({
-  slots, date, onMarkDone, onSkip, onCheckItem, onToggleChecklist,
+  slots, date, onMarkDone, onSkip, onCheckItem, onToggleChecklist, isFutureDay,
 }: Props) {
   const [expandedId, setExpandedId] = useState<string | null>(null);
+
+  // Time-gating: can only mark done AFTER the slot's END time has passed
+  function canMarkDone(slot: ScheduleSlot): boolean {
+    if (isFutureDay) return false; // future days: never
+    if (slot.isAutoMark) return true; // auto-mark slots can always be toggled
+    const now = new Date();
+    const [h, m] = slot.endTime.split(':').map(Number);
+    const slotEnd = new Date(now); slotEnd.setHours(h, m, 0, 0);
+    return now >= slotEnd; // can only mark AFTER end time passes
+  }
 
   const toggle = useCallback((id: string) => {
     setExpandedId((prev) => (prev === id ? null : id));
@@ -336,6 +355,7 @@ export default function AnimatedTimeline({
               onSkip={() => onSkip(slot.id)}
               onCheckItem={(itemId, checked) => onCheckItem(slot.id, itemId, checked)}
               onToggleChecklist={(on) => onToggleChecklist(slot.id, on)}
+              timeGated={!canMarkDone(slot)}
             />
           </div>
         </div>

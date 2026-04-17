@@ -9,8 +9,22 @@ import { enrichSlots } from '@/lib/scheduleUtils';
 import dynamic from 'next/dynamic';
 import dayjs from 'dayjs';
 import toast from 'react-hot-toast';
-import { Calendar, PenSquare, ChevronLeft, ChevronRight, Loader2, MessageSquare, Lock, Info, Pencil } from 'lucide-react';
+import { Calendar, PenSquare, ChevronLeft, ChevronRight, Loader2, MessageSquare, Lock, Info, Pencil, LayoutTemplate, List } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
+
+
+
+const CanvasBuilder = dynamic(
+  () => import('@/components/canvas/CanvasBuilder'),
+  { ssr: false }
+);
+
+const VIEWS = [
+  { v: 'timeline', Icon: Calendar,       label: 'Day view' },
+  { v: 'builder',  Icon: PenSquare,      label: 'Builder'  },
+  { v: 'canvas',   Icon: LayoutTemplate, label: 'Canvas'   },
+] as const;
+type View = (typeof VIEWS)[number]['v'];
 
 const AnimatedTimeline = dynamic(() => import('@/components/timeline/AnimatedTimeline'), { ssr: false });
 const ScheduleBuilder  = dynamic(() => import('@/components/builder/ScheduleBuilder'),  { ssr: false });
@@ -22,7 +36,7 @@ export default function SchedulePage() {
   const { slots, setSlots, addSlot } = useScheduleStore();
   const [date, setDate]     = useState(dayjs().format('YYYY-MM-DD'));
   const [loading, setLoading] = useState(true);
-  const [view, setView]     = useState<'timeline' | 'builder'>('timeline');
+  const [view, setView] = useState<View>('timeline');
   const [showAdd, setShowAdd] = useState(false);
   const [dayNote, setDayNote] = useState('');
   const [editingNote, setEditingNote] = useState(false);
@@ -173,7 +187,7 @@ export default function SchedulePage() {
 
       {/* View toggle */}
       <div style={{ display: 'flex', gap: 2, background: 'var(--surface2)', borderRadius: 8, padding: 3, marginBottom: 20, width: 'fit-content' }}>
-        {[{ v: 'timeline', Icon: Calendar, label: 'Day view' }, { v: 'builder', Icon: PenSquare, label: 'Builder' }].map(({ v, Icon, label }) => (
+        {VIEWS.map(({ v, Icon, label }) => (
           <button key={v} onClick={() => setView(v as any)} style={{ padding: '7px 16px', borderRadius: 6, fontSize: 13, fontWeight: 500, cursor: 'pointer', background: view === v ? 'var(--surface)' : 'transparent', color: view === v ? 'var(--text)' : 'var(--text3)', border: 'none', boxShadow: view === v ? 'var(--shadow)' : 'none', fontFamily: 'var(--font-body)', display: 'flex', alignItems: 'center', gap: 6, transition: 'all 0.15s' }}>
             <Icon size={14} /> {label}
           </button>
@@ -193,7 +207,7 @@ export default function SchedulePage() {
       )}
 
       {view === 'builder' && <ScheduleBuilder onSave={async () => { await new Promise(r => setTimeout(r, 600)); }} />}
-
+      {view === 'canvas' && <CanvasBuilder onSaved={() => fetchSlots(date)} />}
       {showAdd && <AddSlotModal onClose={() => setShowAdd(false)} onAdd={(s) => addSlot(s)} />}
 
       {/* Quick food log popup */}
