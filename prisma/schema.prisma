@@ -216,6 +216,9 @@ model ReadingSession {
   fileUrl     String?
   date        String
   createdAt   DateTime @default(now())
+  pagesRead   Int      @default(0)   // unique pages visited in session
+  totalPages  Int      @default(0)   // total pages in the book
+  bookType    String?                // "PDF" | "TXT" | "EPUB" | "PASSIVE"
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 

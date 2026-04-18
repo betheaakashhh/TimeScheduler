@@ -38,7 +38,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const { theme, setTheme, sidebarExpanded, toggleSidebar } = useScheduleStore();
   const clock = useLiveClock(true);
 
-  const currentPage = NAV_ITEMS.find(n => n.href === pathname)?.label || 'RhythmIQ';
+  const currentPage = NAV_ITEMS.find(n => n.href === pathname)?.label || 'timedule';
 
   return (
     <div className="app-container">
