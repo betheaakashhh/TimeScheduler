@@ -355,7 +355,11 @@ export default function CanvasBuilder({ onSaved }: Props) {
         {/* Canvas */}
         <div
           ref={canvasRef}
-          onClick={() => setSelectedId(null)}
+          onClick={(e) =>{
+            if(e.target === e.currentTarget){
+              setSelectedId(null);
+            } 
+          }}
           style={{
             position: 'relative', width: '100%', height: canvasH,
             background: 'var(--surface)', border: '0.5px solid var(--border)', borderRadius: 12,

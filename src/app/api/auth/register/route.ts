@@ -7,14 +7,16 @@ import { z } from 'zod';
 const registerSchema = z.object({
   email:    z.string().email(),
   password: z.string().min(8, 'Password must be at least 8 characters'),
-  name:     z.string().min(1).max(80).optional(),
+  name:     z.string().trim().min(1).max(80).optional(),
 });
 
 export async function POST(req: NextRequest) {
   const body = await req.json();
   const parsed = registerSchema.safeParse(body);
   if (!parsed.success) {
-    return NextResponse.json({ error: parsed.error.flatten().fieldErrors }, { status: 400 });
+   const fieldErrors = parsed.error.flatten().fieldErrors;
+   const message = fieldErrors.email?.[0] || fieldErrors.password?.[0] || fieldErrors.name?.[0] || 'Invalid input';
+   return NextResponse.json({ error: message ,fieldErrors }, { status: 400 });
   }
 
   const { email, password, name } = parsed.data;

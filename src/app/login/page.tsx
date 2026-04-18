@@ -62,7 +62,11 @@ function AuthCard() {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ email, password, name }),
         });
-        if (!res.ok) { const d = await res.json(); throw new Error(d.error || 'Registration failed'); }
+        if (!res.ok) {
+          const d  = await res.json().catch(() => null);
+          const errMessage = d?.error || d?.fieldErrors?.password?.[0] || d?.fieldErrors?.email?.[0] || d?.fieldErrors?.name?.[0] || 'Registration failed';
+          throw new Error(errMessage);
+        }
       }
       const result = await signIn('credentials', { email, password, redirect: false });
       if (result?.error) throw new Error('Invalid email or password');
@@ -103,7 +107,7 @@ function AuthCard() {
         <div style={{ marginBottom:16 }}>
           <div className="form-label"><Lock size={13}/> Password</div>
           <div style={{ position:'relative' }}>
-            <input className="form-input" style={{ background:'rgba(36,36,32,0.8)', paddingRight:38, marginBottom:0 }} type={showPw?'text':'password'} placeholder="••••••••" value={password} onChange={e => setPass(e.target.value)} required />
+            <input className="form-input" style={{ background:'rgba(36,36,32,0.8)', paddingRight:38, marginBottom:0 }} type={showPw?'text':'password'} placeholder="••••••••" value={password} onChange={e => setPass(e.target.value)} minLength={8} required />
             <button type="button" onClick={() => setShowPw(v => !v)} style={{ position:'absolute', right:10, top:'50%', transform:'translateY(-50%)', background:'none', border:'none', cursor:'pointer', color:'var(--text3)' }}>
               {showPw ? <EyeOff size={15}/> : <Eye size={15}/>}
             </button>
