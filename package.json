@@ -4,8 +4,9 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
+    "dev:server": "tsx src/server/server.ts",
     "build": "next build",
-    "start": "tsx src/server/socket.ts",
+    "start": "tsx src/server/server.ts",
     "lint": "next lint",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
