@@ -1,0 +1,173 @@
+ (cd "$(git rev-parse --show-toplevel)" && git apply --3way <<'EOF' 
+diff --git a/src/app/api/reading/route.ts b/src/app/api/reading/route.ts
+index 477faa6ddb95b9290169aaeb01c34e1a6c872906..38f8de8315d54f6cab679b54bf48a3a54e2688e5 100644
+--- a/src/app/api/reading/route.ts
++++ b/src/app/api/reading/route.ts
+@@ -1,111 +1,90 @@
+-// ════════════════════════════════════════════════════════════════════════════════
+-// src/app/api/reading/route.ts  (UPDATED)
+-// Added: pagesRead, totalPages, bookType fields.
+-// GET now also returns: totalPages (sum), byDayPages (pages per day), bookTypes (format count map)
+-// ════════════════════════════════════════════════════════════════════════════════
+ import { NextRequest, NextResponse } from 'next/server';
+ import { getServerSession } from 'next-auth';
++import { Prisma } from '@prisma/client';
++import dayjs from 'dayjs';
++
+ import { authOptions } from '@/lib/auth';
+ import { prisma } from '@/lib/prisma';
+-import dayjs from 'dayjs';
++
++function toNonNegativeInt(value: unknown, fallback = 0) {
++  const n = Number(value);
++  if (!Number.isFinite(n)) return fallback;
++  return Math.max(0, Math.floor(n));
++}
+ 
+ export async function GET(req: NextRequest) {
+   const session = await getServerSession(authOptions);
+   const userId = (session?.user as { id?: string })?.id;
+   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+ 
+   const { searchParams } = new URL(req.url);
+-  const range = searchParams.get('range') || '30';
+-  const since = dayjs().subtract(parseInt(range), 'day').format('YYYY-MM-DD');
++  const range = toNonNegativeInt(searchParams.get('range') || '30', 30);
++  const since = dayjs().subtract(range, 'day').format('YYYY-MM-DD');
+ 
+   const sessions = await prisma.readingSession.findMany({
+     where: { userId, date: { gte: since } },
+     orderBy: { createdAt: 'desc' },
+   });
+ 
+-  // ── Aggregations ──────────────────────────────────────────────────────────
+-  const totalSec   = sessions.reduce((a, s) => a + s.durationSec, 0);
+-  const totalPages = sessions.reduce((a, s) => a + ((s as any).pagesRead || 0), 0);
++  const totalSec = sessions.reduce((a, s) => a + s.durationSec, 0);
++  const totalPages = sessions.reduce((a, s) => a + (s.pagesRead || 0), 0);
+ 
+-  const byDay: Record<string, number>      = {};
++  const byDay: Record<string, number> = {};
+   const byDayPages: Record<string, number> = {};
+-  const bookTypes: Record<string, number>  = {};
++  const bookTypes: Record<string, number> = {};
+ 
+-  sessions.forEach(s => {
+-    // Time per day
++  sessions.forEach((s) => {
+     byDay[s.date] = (byDay[s.date] || 0) + s.durationSec;
+ 
+-    // Pages per day
+-    const pages = (s as any).pagesRead || 0;
+-    if (pages > 0) {
+-      byDayPages[s.date] = (byDayPages[s.date] || 0) + pages;
++    if (s.pagesRead > 0) {
++      byDayPages[s.date] = (byDayPages[s.date] || 0) + s.pagesRead;
+     }
+ 
+-    // Book format distribution
+-    const fmt = (s as any).bookType || (s.sessionType === 'active' ? 'UNKNOWN' : 'PASSIVE');
++    const fmt = s.bookType || (s.sessionType === 'active' ? 'UNKNOWN' : 'PASSIVE');
+     bookTypes[fmt] = (bookTypes[fmt] || 0) + 1;
+   });
+ 
+   return NextResponse.json({ sessions, totalSec, totalPages, byDay, byDayPages, bookTypes });
+ }
+ 
+ export async function POST(req: NextRequest) {
+   const session = await getServerSession(authOptions);
+-  const userId = (session?.user as any)?.id;
++  const userId = (session?.user as { id?: string })?.id;
+   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+ 
+   const body = await req.json();
+ 
+-  const record = await prisma.readingSession.create({
+-    data: {
+-      userId,
+-      title:       body.title       || null,
+-      sessionType: body.sessionType || 'passive',
+-      durationSec: body.durationSec || 0,
+-      overview:    body.overview    || null,
+-      date:        body.date        || dayjs().format('YYYY-MM-DD'),
+-      // New fields (require Prisma schema migration — see below)
+-      pagesRead:   body.pagesRead   || 0,
+-      totalPages:  body.totalPages  || 0,
+-      bookType:    body.bookType    || null,
+-    } as any, // cast needed until migration runs
+-  });
+-
+-  return NextResponse.json(record, { status: 201 });
+-}
+-
++  const baseData = {
++    userId,
++    title: typeof body.title === 'string' && body.title.trim() ? body.title.trim() : null,
++    sessionType: body.sessionType === 'active' ? 'active' : 'passive',
++    durationSec: toNonNegativeInt(body.durationSec),
++    overview: typeof body.overview === 'string' && body.overview.trim() ? body.overview.trim() : null,
++    date: typeof body.date === 'string' && body.date ? body.date : dayjs().format('YYYY-MM-DD'),
++  };
++
++  const extendedData = {
++    ...baseData,
++    pagesRead: toNonNegativeInt(body.pagesRead),
++    totalPages: toNonNegativeInt(body.totalPages),
++    bookType: typeof body.bookType === 'string' && body.bookType.trim() ? body.bookType.trim() : null,
++  };
++
++  try {
++    const record = await prisma.readingSession.create({ data: extendedData });
++    return NextResponse.json(record, { status: 201 });
++  } catch (error) {
++    // Backward-compatible fallback when DB migration for reading page fields
++    // has not yet been applied in the current environment.
++    if (
++      error instanceof Prisma.PrismaClientKnownRequestError &&
++      (error.code === 'P2022' || error.code === 'P2021')
++    ) {
++      const record = await prisma.readingSession.create({ data: baseData });
++      return NextResponse.json(record, { status: 201 });
++    }
+ 
+-// ════════════════════════════════════════════════════════════════════════════════
+-// PRISMA SCHEMA ADDITIONS
+-// Add these 3 fields to the `ReadingSession` model in prisma/schema.prisma:
+-// ════════════════════════════════════════════════════════════════════════════════
+-/*
+-
+-model ReadingSession {
+-  id          String   @id @default(cuid())
+-  userId      String
+-  title       String?
+-  sessionType String   @default("passive")
+-  durationSec Int      @default(0)
+-  overview    String?
+-  fileUrl     String?
+-  date        String
+-  createdAt   DateTime @default(now())
+-
+-  // ── NEW FIELDS ──────────────────────────────────────────
+-  pagesRead   Int      @default(0)   // unique pages visited in session
+-  totalPages  Int      @default(0)   // total pages in the book
+-  bookType    String?                // "PDF" | "TXT" | "EPUB" | "PASSIVE"
+-  // ────────────────────────────────────────────────────────
+-
+-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+-
+-  @@index([userId, date])
++    console.error('Failed to save reading session', error);
++    return NextResponse.json({ error: 'Failed to save session' }, { status: 500 });
++  }
+ }
+-
+-*/
+-
+-// Run after editing schema:
+-//   npx prisma migrate dev --name add_reading_pages_fields
+-// Or for production:
+-//   npx prisma migrate deploy
+\ No newline at end of file
+ 
+EOF
+)
