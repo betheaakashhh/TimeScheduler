@@ -398,12 +398,14 @@ export default function CanvasBuilder({ onSaved }: Props) {
       {/* Edit panel */}
       <AnimatePresence>
         {selectedSlot && (
-          <EditPanel
-            key={selectedSlot.id}
-            slot={selectedSlot}
-            onChange={updateSlot}
-            onClose={() => setSelectedId(null)}
-          />
+          <div onClick={e => e.stopPropagation()}>
+            <EditPanel
+              key={selectedSlot.id}
+              slot={selectedSlot}
+              onChange={updateSlot}
+              onClose={() => setSelectedId(null)}
+            />
+          </div>
         )}
       </AnimatePresence>
     </div>

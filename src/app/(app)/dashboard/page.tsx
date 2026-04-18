@@ -415,7 +415,7 @@ export default function DashboardPage() {
   }
 
   const upcomingSlots = selectUpcomingSlots({ slots } as any);
-  const mainSlots     = slots.slice(0,6);
+  const mainSlots     = slots; // show all slots
   const currentSlot   = slots.find(s=>s.isCurrentlyActive);
 
   return (

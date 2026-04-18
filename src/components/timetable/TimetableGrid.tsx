@@ -12,8 +12,7 @@ import {
   PersonStanding, TrendingUp, Moon, Star, Sunrise,
   MapPin, ChevronRight, Radio,
 } from 'lucide-react';
-import type { LucideProps } from 'lucide-react';
-
+import { LucideProps } from 'lucide-react'
 // ── Lucide icon map (same as dashboard) ──────────────────────────────────────
 const TAG_ICON: Record<string, React.ComponentType<LucideProps>> = {
   BREAKFAST:       Coffee,
@@ -88,6 +87,16 @@ function SlotDetail({
   const isActive  = !!slot.isCurrentlyActive;
   const isBlocked = slot.status === 'BLOCKED';
   const strictCfg = slot.isStrict ? STRICT_MODE_CONFIG[slot.strictMode] : null;
+
+  // Time-gating: only allow marking done AFTER the slot's end time
+  function canMarkDoneNow(): boolean {
+    if (slot.isAutoMark) return true;
+    const now = new Date();
+    const [h, m] = slot.endTime.split(':').map(Number);
+    const slotEnd = new Date(now); slotEnd.setHours(h, m, 0, 0);
+    return now >= slotEnd;
+  }
+  const timeGated = !canMarkDoneNow();
 
   return (
     <motion.div
@@ -224,14 +233,20 @@ function SlotDetail({
       {/* Actions */}
       {!isDone && !slot.isAutoMark && !isBlocked && (
         <div style={{ display: 'flex', gap: 8 }}>
-          <button
-            className="btn btn-primary"
-            style={{ flex: 1, justifyContent: 'center' }}
-            onClick={() => { onMarkDone?.(slot.id); onClose(); }}
-          >
-            <CheckCircle2 size={13} /> Mark done
-          </button>
-          {slot.isStrict && (
+          {timeGated ? (
+            <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 6, padding: '8px 12px', borderRadius: 8, background: 'var(--surface2)', border: '0.5px solid var(--border)', fontSize: 12, color: 'var(--text3)' }}>
+              ⏳ Available after {formatTime(slot.endTime)}
+            </div>
+          ) : (
+            <button
+              className="btn btn-primary"
+              style={{ flex: 1, justifyContent: 'center' }}
+              onClick={() => { onMarkDone?.(slot.id); onClose(); }}
+            >
+              <CheckCircle2 size={13} /> Mark done
+            </button>
+          )}
+          {slot.isStrict && !timeGated && (
             <button
               className="btn btn-sm"
               style={{ color: '#E24B4A', borderColor: 'rgba(226,75,74,0.3)' }}
