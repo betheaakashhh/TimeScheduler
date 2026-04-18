@@ -21,6 +21,8 @@ const slotSchema = z.object({
   foodRequired: z.boolean().default(false),
   isAcademic:   z.boolean().default(false),
   // checklistOn is a UI-only field — strip it before writing to DB
+  // isFutureDay is a UI-only field — strip it before writing to DB
+  isFutureDay:  z.boolean().optional(),
   checklistOn:  z.boolean().default(true).optional(),
   repeatDays:   z.array(z.number().min(1).max(7)).default([1,2,3,4,5,6,7]),
   checklist:    z.array(z.object({ id:z.string(), label:z.string(), required:z.boolean() })).default([]),
