@@ -159,7 +159,7 @@ export default function ShareCard({ stats, streak, bookName, onClose }: Props) {
       const canvas = await window.html2canvas(cardRef.current, {
         scale: 2, backgroundColor: '#12120F', logging: false, useCORS: true,
       });
-      canvas.toBlob(async (blob) => {
+      canvas.toBlob(async (blob: Blob | null) => {
         if (!blob) return;
         const file = new File([blob], 'reading-stats.png', { type: 'image/png' });
         if (navigator.share && navigator.canShare?.({ files: [file] })) {
@@ -353,7 +353,7 @@ export default function ShareCard({ stats, streak, bookName, onClose }: Props) {
               onClick={async () => {
                 await loadHtml2Canvas();
                 const canvas = await window.html2canvas(cardRef.current!, { scale: 2, backgroundColor: '#12120F', logging: false });
-                canvas.toBlob((blob) => {
+                canvas.toBlob((blob: Blob | null) => {
                   if (!blob) return;
                   const url = URL.createObjectURL(blob);
                   window.open(url, '_blank');

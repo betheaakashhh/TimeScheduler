@@ -39,7 +39,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const clock = useLiveClock(true);
 
   const currentPage = NAV_ITEMS.find(n => n.href === pathname)?.label || 'timedule';
-
+async function handleSignOut() {
+    await signOut({ redirect: false });
+    window.location.assign('/login');  
+}
   return (
     <div className="app-container">
       {/* ── Desktop Sidebar ── */}
@@ -127,7 +130,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                   <div style={{ fontSize:12,fontWeight:500,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap' }}>{session.user.name}</div>
                   <div style={{ fontSize:10,color:'var(--text3)',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap' }}>{session.user.email}</div>
                 </div>
-                <button onClick={() => signOut({ callbackUrl:'/login' })} style={{ background:'none',border:'none',cursor:'pointer',color:'var(--text3)',padding:2,display:'flex' }}>
+                <button onClick={handleSignOut} style={{ background:'none',border:'none',cursor:'pointer',color:'var(--text3)',padding:2,display:'flex' }}>
                   <LogOut size={13}/>
                 </button>
               </>

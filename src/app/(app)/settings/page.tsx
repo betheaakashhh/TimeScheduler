@@ -33,6 +33,11 @@ export default function SettingsPage() {
   const [resetting, setResetting] = useState(false);
   const [applyingWake, setApplyingWake] = useState(false);
 
+  //signout
+  async function handleSignOut() {
+    await signOut({ redirect: false });
+    window.location.assign('/login');  
+}
   useEffect(() => {
     async function load() {
       try {
@@ -100,7 +105,7 @@ export default function SettingsPage() {
     if (!confirm('Delete your account permanently? This cannot be undone.')) return;
     try {
       await fetch('/api/settings/reset', { method: 'DELETE' });
-      await signOut({ callbackUrl: '/login' });
+      await handleSignOut();
     } catch { toast.error('Failed — try again'); }
   }
 
@@ -120,7 +125,7 @@ export default function SettingsPage() {
             <div style={{ fontSize: 13, color: 'var(--text3)' }}>{session?.user?.email}</div>
           </div>
         </div>
-        <button className="btn btn-sm" style={{ color: '#E24B4A', borderColor: 'rgba(226,75,74,0.3)' }} onClick={() => signOut({ callbackUrl: '/login' })}>
+        <button className="btn btn-sm" style={{ color: '#E24B4A', borderColor: 'rgba(226,75,74,0.3)' }} onClick={handleSignOut}>
           <LogOut size={13} /> Sign out
         </button>
       </div>
