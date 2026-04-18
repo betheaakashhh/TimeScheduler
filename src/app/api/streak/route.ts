@@ -1,7 +1,7 @@
 // src/app/api/streak/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
-import { authOptions } from '@/app/api/auth/[...nextauth]/route';
+import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { cache, CACHE_KEYS } from '@/lib/redis';
 import { queueEmail } from '@/lib/email';
