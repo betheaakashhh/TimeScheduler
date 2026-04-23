@@ -239,7 +239,7 @@ function HomeSection() {
             <div style={{ width:46, height:46, background:'var(--accent)', borderRadius:12, display:'flex', alignItems:'center', justifyContent:'center', margin:'0 auto 10px' }}>
               <Activity size={24} color="white" strokeWidth={2.5}/>
             </div>
-            <div style={{ fontFamily:'var(--font-head)', fontSize:18, fontWeight:800, color:'var(--text)' }}>RhythmIQ</div>
+            <div style={{ fontFamily:'var(--font-head)', fontSize:18, fontWeight:800, color:'var(--text)' }}>Timedule</div>
             <div style={{ fontSize:11, color:'var(--text3)', marginTop:3 }}>Smart daily timetable manager</div>
           </div>
           <AuthCard/>
@@ -281,7 +281,7 @@ function ProductSection() {
     <div style={{ padding:'28px 36px' }} ref={tlRef}>
       <div style={{ display:'inline-flex', padding:'3px 10px', borderRadius:20, background:'rgba(255,107,53,0.15)', color:'var(--accent)', fontSize:11, fontWeight:600, marginBottom:10 }}>Product</div>
       <h2 style={{ fontFamily:'var(--font-head)', fontSize:22, fontWeight:800, letterSpacing:-0.4, marginBottom:8, color:'var(--text)' }}>Built around your daily rhythm</h2>
-      <p style={{ fontSize:13, color:'var(--text2)', lineHeight:1.65, marginBottom:20, maxWidth:440 }}>Watch how RhythmIQ guides your day — from morning jog to study sessions to dinner.</p>
+      <p style={{ fontSize:13, color:'var(--text2)', lineHeight:1.65, marginBottom:20, maxWidth:440 }}>Watch how Timedule guides your day — from morning jog to study sessions to dinner.</p>
 
       {/* Person scene */}
       <div style={{ display:'flex', justifyContent:'space-around', alignItems:'flex-end', marginBottom:20, background:'var(--surface)', border:'0.5px solid var(--border)', borderRadius:'var(--r)', padding:'18px 24px' }}>
@@ -524,7 +524,7 @@ function CompanySection() {
       <h2 style={{ fontFamily:'var(--font-head)',fontSize:26,fontWeight:800,letterSpacing:-0.5,marginBottom:10 }}><span style={{ color:'var(--accent5)' }}>AetherSolve</span> Pvt Ltd</h2>
       </div>
       <p style={{ fontSize:13,color:'var(--text2)',lineHeight:1.65,marginBottom:24,maxWidth:440 }}>Founded in 2024, AetherSolve is a student-founded startup on a mission to help people master their time and build better habits.</p>
-       <p style={{ fontSize:13,color:'var(--text2)',lineHeight:1.65,marginBottom:24,maxWidth:440 }}>RhythmIQ is our first product, born out of our own struggles with time management and a desire to create a tool that truly meets the needs of students and self-learners.</p>
+       <p style={{ fontSize:13,color:'var(--text2)',lineHeight:1.65,marginBottom:24,maxWidth:440 }}>Timedule is our first product, born out of our own struggles with time management and a desire to create a tool that truly meets the needs of students and self-learners.</p>
        <p style={{ fontSize:13,color:'var(--text2)',lineHeight:1.65,marginBottom:24,maxWidth:440 }}>We're a small, passionate team dedicated to building products that make a real difference in people's lives. We're proud to be 100% independent and bootstrapped, and we're just getting started.</p>
        <div style={{ display:'flex',alignItems:'center',gap:12,marginBottom:24 }}>
          <Wifi size={16} color="var(--accent5)"/>
@@ -553,18 +553,18 @@ function CompanySection() {
 
       </div>
       
-      <h2 style={{ fontFamily:'var(--font-head)',fontSize:26,fontWeight:800,letterSpacing:-0.5,marginBottom:10 }}>Why we built RhythmIQ</h2>
+      <h2 style={{ fontFamily:'var(--font-head)',fontSize:26,fontWeight:800,letterSpacing:-0.5,marginBottom:10 }}>Why we built Timedule</h2>
       <p style={{ fontSize:13,color:'var(--text2)',lineHeight:1.65,marginBottom:24,maxWidth:440 }}>We were students drowning in sticky notes and broken spreadsheets.</p>
       <div className="card" style={{ borderLeft:'3px solid var(--accent)',borderRadius:`0 var(--r2) var(--r2) 0`,marginBottom:20 }}>
-        <p style={{ fontSize:14,lineHeight:1.75,color:'var(--text2)' }}>"Most productivity apps are built for office workers. We built RhythmIQ for students and self-learners. Every pixel is intentional."</p>
-        <div style={{ marginTop:10,fontSize:12,fontWeight:600 }}>— RhythmIQ Team</div>
+        <p style={{ fontSize:14,lineHeight:1.75,color:'var(--text2)' }}>"Most productivity apps are built for office workers. We built Timedule for students and self-learners. Every pixel is intentional."</p>
+        <div style={{ marginTop:10,fontSize:12,fontWeight:600 }}>— Timedule Team</div>
       </div>
       <div className='faqs' style={{ marginBottom:24 }}>
         <h2 style={{ fontFamily:'var(--font-head)',fontSize:26,fontWeight:800,letterSpacing:-0.5,marginBottom:10 }}>FAQs</h2>
         <div style={{ display:'grid',gridTemplateColumns:'1fr 1fr',gap:12 }}>
           {[
             ['Is there a free trial?', 'Yes! Sign up and get a 14-day free trial of our premium features, no credit card required.'],
-            ['What platforms is it on?', 'RhythmIQ is web-based and works on all modern browsers. We also have a mobile app in the works!'],
+            ['What platforms is it on?', 'Timedule is web-based and works on all modern browsers. We also have a mobile app in the works!'],
             ['Can I cancel anytime?', 'Absolutely. You can cancel your subscription at any time from your account settings, no questions asked.'],
             ['How do I contact support?', 'Just email us at support@aethersolve.com']
           ].map(([q,a]) => (
@@ -693,7 +693,7 @@ export default function LoginPage() {
             <div style={{ width:36, height:36, background:'var(--accent)', borderRadius:9, display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
               <Activity size={18} color="white" strokeWidth={2.5}/>
             </div>
-            <span style={{ fontFamily:'var(--font-head)', fontSize:16, fontWeight:800, whiteSpace:'nowrap' }}>RhythmIQ</span>
+            <span style={{ fontFamily:'var(--font-head)', fontSize:16, fontWeight:800, whiteSpace:'nowrap' }}>Timedule</span>
           </div>
 
           {/* Nav items */}
@@ -736,7 +736,7 @@ export default function LoginPage() {
           {/* Topbar */}
           <div className="topbar">
             <div style={{ fontFamily:'var(--font-head)', fontSize:17, fontWeight:700, flex:1 }}>
-              {NAV.find(n => n.id === active)?.label ?? 'RhythmIQ'}
+              {NAV.find(n => n.id === active)?.label ?? 'Timedule'}
             </div>
             <div style={{ display:'flex', alignItems:'center', gap:8 }}>
               <div style={{ display:'flex', alignItems:'center', gap:5, fontSize:12, color:'var(--text3)' }}>

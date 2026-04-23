@@ -21,7 +21,7 @@ const dmSans = DM_Sans({
 });
 
 export const metadata: Metadata = {
-  title: 'RhythmIQ — Smart Timetable Manager',
+  title: 'Timedule — Smart Timetable Manager',
   description: 'Real-time timetable and task tracker with streak system, academic integration, and smart reminders.',
   manifest: '/manifest.json',
   icons: { icon: '/icon.png', apple: '/apple-icon.png' },

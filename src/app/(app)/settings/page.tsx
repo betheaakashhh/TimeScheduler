@@ -83,7 +83,7 @@ export default function SettingsPage() {
       const blob = await res.blob();
       const url  = URL.createObjectURL(blob);
       const a    = document.createElement('a');
-      a.href = url; a.download = 'rhythmiq-export.json'; a.click();
+      a.href = url; a.download = 'timedule-export.json'; a.click();
       URL.revokeObjectURL(url);
       toast.success('Data exported!');
     } catch { toast.error('Export failed'); }

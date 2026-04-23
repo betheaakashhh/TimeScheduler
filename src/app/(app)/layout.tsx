@@ -68,7 +68,7 @@ async function handleSignOut() {
           <div style={{ width:36,height:36,background:'var(--accent)',borderRadius:9,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0 }}>
             <Activity size={18} color="white" strokeWidth={2.5} />
           </div>
-          {sidebarExpanded && <span style={{ fontFamily:'var(--font-head)',fontSize:16,fontWeight:800,whiteSpace:'nowrap' }}>RhythmIQ</span>}
+          {sidebarExpanded && <span style={{ fontFamily:'var(--font-head)',fontSize:16,fontWeight:800,whiteSpace:'nowrap' }}>Timedule</span>}
         </div>
 
         {/* Nav */}

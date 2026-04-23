@@ -92,7 +92,7 @@ function renderManualTimetable(canvas: HTMLCanvasElement, slots: ManualSlot[], t
   });
 
   ctx.fillStyle = '#bbbbbb'; ctx.font = '11px Arial'; ctx.textAlign = 'center';
-  ctx.fillText('RhythmIQ · rhythmiq.app · Your personal schedule companion', W / 2, H - 12);
+  ctx.fillText('Timedule · timedule.app · Your personal schedule companion', W / 2, H - 12);
 }
 
 export default function TimetableExportPage() {
@@ -124,7 +124,7 @@ export default function TimetableExportPage() {
     renderManualTimetable(c, slots, title);
     const url = c.toDataURL(`image/${fmt}`, 0.92);
     const a = document.createElement('a'); a.href = url;
-    a.download = `rhythmiq-timetable-${dayjs().format('YYYY-MM-DD')}.${fmt === 'jpeg' ? 'jpg' : 'png'}`; a.click();
+    a.download = `timedule-timetable-${dayjs().format('YYYY-MM-DD')}.${fmt === 'jpeg' ? 'jpg' : 'png'}`; a.click();
     toast.success('Downloaded!');
   }
 
