@@ -24,6 +24,7 @@ import {
   ChevronRight, ExternalLink,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
+import TermsPrivacyPanel, { type LegalDoc } from '@/components/term/TermsPrivacyPanel';
 
 // ─────────────────────────────────────────────────────────────────
 // TYPES
@@ -100,7 +101,11 @@ function useTheme() {
 // ─────────────────────────────────────────────────────────────────
 // AUTH CARD
 // ─────────────────────────────────────────────────────────────────
-function AuthCard() {
+interface AuthCardProps {
+  onOpenLegal: (doc: LegalDoc) => void;
+}
+
+function AuthCard({ onOpenLegal }: AuthCardProps) {
   const router = useRouter();
   const [mode, setMode]     = useState<'login' | 'register'>('login');
   const [email, setEmail]   = useState('');
@@ -276,8 +281,9 @@ function AuthCard() {
 
       <p style={{ textAlign: 'center', marginTop: 10, fontSize: 11, color: 'var(--text3)' }}>
         By continuing you agree to our{' '}
-        <a href="#" style={{ color: 'var(--accent)' }}>Terms</a> and{' '}
-        <a href="#" style={{ color: 'var(--accent)' }}>Privacy</a>
+        <button onClick={() => onOpenLegal('terms')} style={{ color: 'var(--accent)', background: 'none', border: 'none', cursor: 'pointer', fontSize: 11, padding: 0, fontFamily: 'var(--font-body)' }}>Terms</button>
+        {' '}and{' '}
+        <button onClick={() => onOpenLegal('privacy')} style={{ color: 'var(--accent)', background: 'none', border: 'none', cursor: 'pointer', fontSize: 11, padding: 0, fontFamily: 'var(--font-body)' }}>Privacy</button>
       </p>
     </motion.div>
   );
@@ -286,7 +292,7 @@ function AuthCard() {
 // ─────────────────────────────────────────────────────────────────
 // HOME SECTION
 // ─────────────────────────────────────────────────────────────────
-function HomeSection() {
+function HomeSection({ onOpenLegal }: { onOpenLegal: (doc: LegalDoc) => void }) {
   const cards = [
     {
       icon: <CheckCircle2 size={15} color="#2DCB7A" />,
@@ -493,7 +499,7 @@ function HomeSection() {
             <p style={{ fontFamily: 'var(--font-head)', fontSize: 18, fontWeight: 800, color: 'var(--text)' }}>Timedule</p>
             <p style={{ fontSize: 11, color: 'var(--text3)', marginTop: 3 }}>Smart daily timetable manager</p>
           </motion.div>
-          <AuthCard />
+          <AuthCard onOpenLegal={onOpenLegal} />
         </div>
       </div>
     </div>
@@ -1056,17 +1062,6 @@ function AboutSection() {
 }
 
 // ─────────────────────────────────────────────────────────────────
-// SECTION MAP
-// ─────────────────────────────────────────────────────────────────
-const SECTIONS: Record<NavId, React.ReactNode> = {
-  home:     <HomeSection />,
-  product:  <ProductSection />,
-  features: <FeaturesSection />,
-  company:  <CompanySection />,
-  about:    <AboutSection />,
-};
-
-// ─────────────────────────────────────────────────────────────────
 // BOTTOM NAV  (Android-style)
 // ─────────────────────────────────────────────────────────────────
 interface BottomNavProps {
@@ -1134,11 +1129,32 @@ function BottomNav({ active, onSwitch }: BottomNavProps) {
 // ─────────────────────────────────────────────────────────────────
 export default function LoginPage() {
   const [active, setActive] = useState<NavId>('home');
+  const [overlay, setOverlay] = useState<LegalDoc | null>(null);
   const { dark, toggle } = useTheme();
   const clock = useClock();
   const contentRef = useRef<HTMLDivElement>(null);
 
+  const openLegal = (doc: LegalDoc) => {
+    setOverlay(doc);
+    contentRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const closeLegal = () => {
+    setOverlay(null);
+    contentRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  // Build sections map here so HomeSection receives openLegal
+  const SECTIONS_LIVE: Record<NavId, React.ReactNode> = {
+    home:     <HomeSection onOpenLegal={openLegal} />,
+    product:  <ProductSection />,
+    features: <FeaturesSection />,
+    company:  <CompanySection />,
+    about:    <AboutSection />,
+  };
+
   function switchTab(id: NavId) {
+    setOverlay(null);   // close legal overlay when switching tabs
     setActive(id);
     contentRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
   }
@@ -1281,15 +1297,27 @@ export default function LoginPage() {
         {/* CONTENT */}
         <div ref={contentRef} style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden', minHeight: 0 }}>
           <AnimatePresence mode="wait">
-            <motion.div
-              key={active}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-              transition={{ type: 'spring', stiffness: 300, damping: 32 }}
-            >
-              {SECTIONS[active]}
-            </motion.div>
+            {overlay ? (
+              <motion.div
+                key={`legal-${overlay}`}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                transition={{ type: 'spring', stiffness: 300, damping: 32 }}
+              >
+                <TermsPrivacyPanel initial={overlay} onClose={closeLegal} />
+              </motion.div>
+            ) : (
+              <motion.div
+                key={active}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                transition={{ type: 'spring', stiffness: 300, damping: 32 }}
+              >
+                {SECTIONS_LIVE[active]}
+              </motion.div>
+            )}
           </AnimatePresence>
         </div>
 
