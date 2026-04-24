@@ -87,7 +87,7 @@ export default function OnboardingPage() {
               Welcome, {firstName}!
             </div>
             <div style={{ fontSize: 14, color: 'var(--text3)', lineHeight: 1.7, marginBottom: 28 }}>
-              RhythmIQ helps you build a consistent daily routine with real-time tracking, smart reminders, and streak rewards. Let's set you up in 2 minutes.
+              Timedule helps you build a consistent daily routine with real-time tracking, smart reminders, and streak rewards. Let's set you up in 2 minutes.
             </div>
             <button className="btn btn-primary" style={{ width: '100%', justifyContent: 'center', height: 44 }} onClick={() => setStep('choice')}>
               Get started <ArrowRight size={16} />
