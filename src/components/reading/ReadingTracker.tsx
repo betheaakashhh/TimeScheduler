@@ -55,8 +55,13 @@ function formatTime(sec: number) {
 function formatShort(sec: number) {
   const h = Math.floor(sec / 3600);
   const m = Math.floor((sec % 3600) / 60);
-  if (h > 0) return `${h}h ${m}m`;
-  return `${m}m`;
+
+  if (h > 0) {
+    const m = Math.floor((sec % 3600) / 60);
+    return `${h}h ${m}m`;
+  }
+  const minWithDecimal = Math.round((sec / 60) * 10) / 10;
+  return `${minWithDecimal.toFixed(1)}m`;
 }
 
 // ─── Session type card ────────────────────────────────────────────────────────
