@@ -384,6 +384,13 @@ export default function DashboardPage() {
 
   const handleMarkDone = useCallback((slotId:string) => {
     const s=slots.find(x=>x.id===slotId); if(!s)return;
+    const now = new Date();
+    const nowMins = now.getHours() * 60 + now.getMinutes();
+    const [sh, sm] = s.startTime.split(':').map(Number);
+    if (nowMins < sh * 60 + sm) {
+      toast.error(`"${s.title}" hasn't started yet — available from ${s.startTime}`);
+      return;
+    }
     if(s.foodRequired&&!bfLogged&&foodItems.length===0){toast.error('Log your food first!');return;}
     markComplete(slotId,today);
     toast.success(`${s.title} done!`);

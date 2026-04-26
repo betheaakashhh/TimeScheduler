@@ -92,9 +92,10 @@ function SlotDetail({
   function canMarkDoneNow(): boolean {
     if (slot.isAutoMark) return true;
     const now = new Date();
-    const [h, m] = slot.endTime.split(':').map(Number);
-    const slotEnd = new Date(now); slotEnd.setHours(h, m, 0, 0);
-    return now >= slotEnd;
+    const nowMins = now.getHours() * 60 + now.getMinutes();
+    const [sh, sm] = slot.startTime.split(':').map(Number);
+    const startMins = sh * 60 + sm;
+    return nowMins >= startMins;
   }
   const timeGated = !canMarkDoneNow();
 
@@ -234,9 +235,9 @@ function SlotDetail({
       {!isDone && !slot.isAutoMark && !isBlocked && (
         <div style={{ display: 'flex', gap: 8 }}>
           {timeGated ? (
-            <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 6, padding: '8px 12px', borderRadius: 8, background: 'var(--surface2)', border: '0.5px solid var(--border)', fontSize: 12, color: 'var(--text3)' }}>
-              ⏳ Available after {formatTime(slot.endTime)}
-            </div>
+           <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 6, padding: '8px 12px', borderRadius: 8, background: 'var(--surface2)', border: '0.5px solid var(--border)', fontSize: 12, color: 'var(--text3)' }}>
+  ⏳ Starts at {formatTime(slot.startTime)} — not available yet
+</div>
           ) : (
             <button
               className="btn btn-primary"

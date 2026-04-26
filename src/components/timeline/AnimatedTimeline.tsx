@@ -235,9 +235,9 @@ function SlotCard({
               {!isDone && !slot.isAutoMark && !isBlocked && (
                 timeGated ? (
                   <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 6, padding: '7px 12px', borderRadius: 8, background: 'var(--surface2)', border: '0.5px solid var(--border)', fontSize: 12, color: 'var(--text3)' }}>
-                    <span style={{ fontSize: 13 }}>⏳</span>
-                    Available after {formatTime(slot.endTime)}
-                  </div>
+  <span style={{ fontSize: 13 }}>⏳</span>
+  Starts at {formatTime(slot.startTime)} — not available yet
+</div>
                 ) : (
                   <motion.button
                     className="btn btn-primary btn-sm"
@@ -291,12 +291,13 @@ export default function AnimatedTimeline({
 
   // Time-gating: can only mark done AFTER the slot's END time has passed
   function canMarkDone(slot: ScheduleSlot): boolean {
-    if (isFutureDay) return false; // future days: never
-    if (slot.isAutoMark) return true; // auto-mark slots can always be toggled
+    if (isFutureDay) return false;
+    if (slot.isAutoMark) return true;
     const now = new Date();
-    const [h, m] = slot.endTime.split(':').map(Number);
-    const slotEnd = new Date(now); slotEnd.setHours(h, m, 0, 0);
-    return now >= slotEnd; // can only mark AFTER end time passes
+    const nowMins = now.getHours() * 60 + now.getMinutes();
+    const [sh, sm] = slot.startTime.split(':').map(Number);
+    const startMins = sh * 60 + sm;
+    return nowMins >= startMins; // can mark once slot has started
   }
 
   const toggle = useCallback((id: string) => {
