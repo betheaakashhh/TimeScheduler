@@ -241,7 +241,9 @@ export default function ReadingTracker() {
           {
             icon: 'fa-solid fa-clock-rotate-left',
             label: 'Total this month',
-            value: statsLoading ? '…' : formatShort(totalSec),
+            value: statsLoading
+             ? '…'
+             : `${stats?.totalPages ?? sessions.reduce((a: number, s: any) => a + (s.pagesRead || 0), 0)}`,
             sub: `across ${sessions.length} sessions`,
             color: '#FF6B35',
             bg: 'rgba(255,107,53,0.06)',
